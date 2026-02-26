@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "PradOS Infographic",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8090", "--directory", "/Users/pradeepnair/Desktop/GEN AI/PradOS"],
+      "port": 8090
+    },
+    {
+      "name": "Career Bot Web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/pradeepnair/Desktop/GEN AI/Career_Bot/web", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "Career Bot CLI",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/pradeepnair/Desktop/GEN AI/Career_Bot", "run", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "Weather WebApp Mock MCP",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/pradeepnair/Desktop/GEN AI/Weather-WebApp", "run", "mock:mcp"],
+      "port": 8080
+    }
+  ]
+}

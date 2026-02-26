@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PradOS — Personal Operating System</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary:    #0d1117;
+    --bg-secondary:  #161b22;
+    --bg-card:       #1c2128;
+    --bg-card-hover: #21262d;
+    --border:        #30363d;
+    --claude-blue:   #7c8cf8;
+    --claude-purple: #a78bfa;
+    --text-bright:   #e6edf3;
+    --text-muted:    #8b949e;
+    --text-dim:      #6e7681;
+    --tasks-color:     #f0883e;
+    --projects-color:  #56d364;
+    --workflows-color: #58a6ff;
+    --meetings-color:  #db61a2;
+    --knowledge-color: #bc8cff;
+    --tools-color:     #ffa657;
+    --temp-color:      #8b949e;
+    --templates-color: #39d353;
+    --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-bright);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,140,248,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,140,248,0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 28px 96px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    text-align: center;
+    margin-bottom: 72px;
+    animation: fadein 0.8s ease both;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,140,248,0.12);
+    border: 1px solid rgba(124,140,248,0.3);
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 11px;
+    color: var(--claude-blue);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+
+  .header-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--claude-blue);
+    border-radius: 50%;
+    animation: pulse-dot 2s ease infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.6); }
+  }
+
+  .header h1 {
+    font-size: clamp(48px, 8vw, 88px);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.0;
+    background: linear-gradient(135deg, #e6edf3 0%, #7c8cf8 45%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+  }
+
+  .header-subtitle {
+    font-size: 16px;
+    color: var(--text-muted);
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* ─── SECTION HEADERS ─── */
+  .section-hdr {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .section-num {
+    font-size: 11px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--claude-blue);
+    background: rgba(124,140,248,0.12);
+    border: 1px solid rgba(124,140,248,0.3);
+    border-radius: 6px;
+    padding: 3px 10px;
+    letter-spacing: 0.06em;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-bright);
+  }
+
+  .section-tag {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+
+  section { margin-bottom: 80px; }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    width: 2px;
+    height: 48px;
+    background: linear-gradient(to bottom, rgba(124,140,248,0.4), transparent);
+    margin: 0 auto 80px;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .anim { animation: fadein 0.6s ease both; }
+  .anim:nth-child(1) { animation-delay: 0.05s; }
+  .anim:nth-child(2) { animation-delay: 0.12s; }
+  .anim:nth-child(3) { animation-delay: 0.19s; }
+  .anim:nth-child(4) { animation-delay: 0.26s; }
+  .anim:nth-child(5) { animation-delay: 0.33s; }
+  .anim:nth-child(6) { animation-delay: 0.40s; }
+  .anim:nth-child(7) { animation-delay: 0.47s; }
+  .anim:nth-child(8) { animation-delay: 0.54s; }
+  .anim:nth-child(9) { animation-delay: 0.61s; }
+
+  /* ═══════════════════════════════════════
+     SECTION 1 — FOLDER ARCHITECTURE
+  ═══════════════════════════════════════ */
+  .hub-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .hub-node {
+    position: relative;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #1e2060, #090b25);
+    border: 2px solid var(--claude-blue);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      0 0 50px rgba(124,140,248,0.3),
+      0 0 100px rgba(124,140,248,0.12),
+      inset 0 0 40px rgba(124,140,248,0.1);
+    animation: hub-breathe 4s ease-in-out infinite;
+    cursor: default;
+    z-index: 2;
+  }
+
+  @keyframes hub-breathe {
+    0%, 100% { box-shadow: 0 0 50px rgba(124,140,248,0.3), 0 0 100px rgba(124,140,248,0.12), inset 0 0 40px rgba(124,140,248,0.1); }
+    50%       { box-shadow: 0 0 70px rgba(124,140,248,0.5), 0 0 140px rgba(124,140,248,0.22), inset 0 0 55px rgba(124,140,248,0.18); }
+  }
+
+  .hub-ring {
+    position: absolute;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 1px dashed rgba(124,140,248,0.18);
+    animation: ring-spin 24s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes ring-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .hub-emoji { font-size: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 14px rgba(124,140,248,0.9)); }
+  .hub-name  { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 0.06em; }
+  .hub-tag   { font-size: 10px; color: var(--claude-blue); font-family: var(--font-mono); letter-spacing: 0.14em; margin-top: 3px; }
+
+  .folder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+    width: 100%;
+  }
+
+  .folder-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: default;
+  }
+
+  .folder-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--cc, var(--claude-blue));
+    border-radius: 14px 14px 0 0;
+  }
+
+  .folder-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, var(--cg, rgba(124,140,248,0.04)) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .folder-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cc, var(--claude-blue));
+    box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  }
+
+  .fc-icon  { font-size: 30px; margin-bottom: 12px; }
+  .fc-name  { font-size: 13px; font-weight: 700; font-family: var(--font-mono); color: var(--cc, var(--claude-blue)); margin-bottom: 6px; }
+  .fc-desc  { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+  .fc-sub   { margin-top: 12px; font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); line-height: 1.9; }
+
+  /* ═══════════════════════════════════════
+     SECTION 2 — TASK LIFECYCLE
+  ═══════════════════════════════════════ */
+  .lifecycle {
+    display: flex;
+    align-items: stretch;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .lc-stage {
+    flex: 1;
+    padding: 28px 22px;
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  .lc-stage:hover { background: var(--bg-card-hover, #21262d); }
+
+  .lc-stage + .lc-stage::before {
+    content: '→';
+    position: absolute;
+    left: -13px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 18px;
+    background: var(--bg-card);
+    padding: 6px 2px;
+    line-height: 1;
+  }
+
+  .lc-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--sc, var(--claude-blue));
+    color: #000;
+    font-size: 11px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  .lc-title { font-size: 15px; font-weight: 700; color: var(--text-bright); margin-bottom: 4px; }
+  .lc-file  { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-bottom: 10px; }
+  .lc-desc  { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+  /* ═══════════════════════════════════════
+     SECTION 3 — CLAUDE FLOWS
+  ═══════════════════════════════════════ */
+  .flows-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+  }
+
+  .flow-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .flow-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(124,140,248,0.1);
+    border: 1px solid rgba(124,140,248,0.22);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--claude-blue);
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+
+  .flow-step {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .flow-step:first-of-type { border-top: none; }
+
+  .flow-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--dc, var(--claude-blue));
+    box-shadow: 0 0 6px var(--dc, var(--claude-blue));
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .flow-text { font-size: 12px; color: var(--text-muted); line-height: 1.55; flex: 1; }
+  .flow-text strong { color: var(--text-bright); }
+
+  .flow-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    align-self: flex-start;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════
+     SECTION 4 — SKILLS
+  ═══════════════════════════════════════ */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+  }
+
+  .skill-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .skill-card:hover {
+    border-color: var(--claude-blue);
+    transform: translateY(-3px);
+  }
+
+  .skill-cmd  { font-size: 13px; font-weight: 700; font-family: var(--font-mono); color: var(--claude-blue); white-space: nowrap; }
+  .skill-desc { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+  /* ═══════════════════════════════════════
+     SECTION 5 — INFO FLOW
+  ═══════════════════════════════════════ */
+  .infoflow-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 44px;
+    overflow-x: auto;
+  }
+
+  .ifd {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr 60px 1fr;
+    grid-template-rows: auto 24px auto 24px auto;
+    align-items: center;
+    justify-items: center;
+    min-width: 680px;
+    gap: 0;
+  }
+
+  .ifd-node {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    text-align: center;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  .ifd-node:hover { border-color: var(--nc, var(--claude-blue)); }
+  .ifd-icon { font-size: 26px; margin-bottom: 8px; }
+  .ifd-name { font-size: 12px; font-weight: 700; font-family: var(--font-mono); color: var(--text-bright); margin-bottom: 4px; }
+  .ifd-desc { font-size: 11px; color: var(--text-muted); }
+
+  .ifd-arr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+    font-size: 18px;
+  }
+
+  .ifd-arr-lbl { font-size: 9px; color: var(--claude-blue); font-family: var(--font-mono); letter-spacing: 0.06em; }
+
+  .ifd-vline {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(to bottom, rgba(124,140,248,0.3), rgba(124,140,248,0.05));
+  }
+
+  /* ═══════════════════════════════════════
+     SECTION 6 — PRINCIPLES
+  ═══════════════════════════════════════ */
+  .principles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .p-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+
+  .p-card:hover { transform: translateY(-4px); }
+
+  .p-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--pc, var(--claude-blue)), transparent);
+  }
+
+  .p-num {
+    font-size: 64px;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--pc, var(--claude-blue));
+    opacity: 0.12;
+    position: absolute;
+    top: 4px; right: 14px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .p-title { font-size: 14px; font-weight: 700; color: var(--text-bright); margin-bottom: 10px; position: relative; }
+  .p-desc  { font-size: 12px; color: var(--text-muted); line-height: 1.65; position: relative; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    text-align: center;
+    border-top: 1px solid var(--border);
+    padding-top: 36px;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .footer strong { color: var(--claude-blue); font-family: var(--font-mono); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 700px) {
+    .lifecycle { flex-direction: column; }
+    .lc-stage + .lc-stage::before { content: '↓'; left: 50%; top: -13px; transform: translateX(-50%); }
+    .infoflow-wrap { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-badge">Personal Operating System · v1.0 · 2026</div>
+    <h1>PradOS</h1>
+    <p class="header-subtitle">
+      A structured personal OS for Pradeep Nair — making every Claude session start with full context, every project leave a trace, and every week compound on the last.
+    </p>
+  </header>
+
+  <div class="divider"></div>
+
+  <!-- S1: FOLDER ARCHITECTURE -->
+  <section>
+    <div class="section-hdr">
+      <span class="section-num">01</span>
+      <span class="section-title">Folder Architecture</span>
+      <span class="section-tag">every folder has one job</span>
+    </div>
+
+    <div class="hub-wrap">
+      <div class="hub-node">
+        <div class="hub-ring"></div>
+        <div class="hub-emoji">⚙️</div>
+        <div class="hub-name">PradOS</div>
+        <div class="hub-tag">CLAUDE.md</div>
+      </div>
+
+      <div class="folder-grid">
+        <div class="folder-card anim" style="--cc:var(--tasks-color);--cg:rgba(240,136,62,0.06)">
+          <div class="fc-icon">📋</div>
+          <div class="fc-name">Tasks/</div>
+          <div class="fc-desc">Three-state task lifecycle. The only place a to-do item lives.</div>
+          <div class="fc-sub">backlog.md<br>active.md<br>archive/</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--projects-color);--cg:rgba(86,211,100,0.06)">
+          <div class="fc-icon">🚀</div>
+          <div class="fc-name">Projects/</div>
+          <div class="fc-desc">One folder per initiative. Context, research, outputs in one place.</div>
+          <div class="fc-sub">[project]/brief.md<br>[project]/research/<br>[project]/assets/</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--workflows-color);--cg:rgba(88,166,255,0.06)">
+          <div class="fc-icon">🔁</div>
+          <div class="fc-name">Workflows/</div>
+          <div class="fc-desc">Repeatable processes Claude executes with you. Write once, run forever.</div>
+          <div class="fc-sub">[workflow]/CLAUDE.md<br>[workflow]/workflow-spec.md<br>[workflow]/Drafts/</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--meetings-color);--cg:rgba(219,97,162,0.06)">
+          <div class="fc-icon">💬</div>
+          <div class="fc-name">Meetings/</div>
+          <div class="fc-desc">Notes by type. Never lose what was decided or who owns what.</div>
+          <div class="fc-sub">1on1s/<br>standups/</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--knowledge-color);--cg:rgba(188,140,255,0.06)">
+          <div class="fc-icon">🧠</div>
+          <div class="fc-name">Knowledge/</div>
+          <div class="fc-desc">Durable context that never expires. The long-term memory of PradOS.</div>
+          <div class="fc-sub">Reference/about-me.md<br>Research/<br>People/</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--templates-color);--cg:rgba(57,211,83,0.06)">
+          <div class="fc-icon">📐</div>
+          <div class="fc-name">Templates/</div>
+          <div class="fc-desc">Starter files for every document type. Consistency without effort.</div>
+          <div class="fc-sub">prd.md<br>meeting-notes.md<br>project-brief.md<br>1on1.md · weekly-reflection.md</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--claude-blue);--cg:rgba(124,140,248,0.08)">
+          <div class="fc-icon">⚡</div>
+          <div class="fc-name">.claude/skills/</div>
+          <div class="fc-desc">Slash commands that give Claude specific capabilities inside PradOS.</div>
+          <div class="fc-sub">/standup<br>/weekly-update<br>/new-project<br>/meeting-prep · /reflect</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--tools-color);--cg:rgba(255,166,87,0.06)">
+          <div class="fc-icon">🛠</div>
+          <div class="fc-name">Tools/</div>
+          <div class="fc-desc">Shell scripts and utilities. Automation lives here.</div>
+          <div class="fc-sub">scripts go here</div>
+        </div>
+        <div class="folder-card anim" style="--cc:var(--temp-color);--cg:rgba(139,148,158,0.05)">
+          <div class="fc-icon">🗂</div>
+          <div class="fc-name">_temp/</div>
+          <div class="fc-desc">Zero-friction capture zone. Dump first, organize later. No rules.</div>
+          <div class="fc-sub">anything goes</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- S2: TASK LIFECYCLE -->
+  <section>
+    <div class="section-hdr">
+      <span class="section-num">02</span>
+      <span class="section-title">Task Lifecycle</span>
+      <span class="section-tag">every task follows the same path</span>
+    </div>
+
+    <div class="lifecycle">
+      <div class="lc-stage">
+        <div class="lc-num" style="--sc:var(--temp-color)">0</div>
+        <div class="lc-title">Capture</div>
+        <div class="lc-file">_temp/ or backlog</div>
+        <div class="lc-desc">Idea hits. Dump it immediately. Zero friction — entropy is fine here.</div>
+      </div>
+      <div class="lc-stage">
+        <div class="lc-num" style="--sc:var(--tasks-color)">1</div>
+        <div class="lc-title">Backlog</div>
+        <div class="lc-file">Tasks/backlog.md</div>
+        <div class="lc-desc">Triage weekly. Assign rough priority. Not a commitment — just inventory.</div>
+      </div>
+      <div class="lc-stage">
+        <div class="lc-num" style="--sc:var(--projects-color)">2</div>
+        <div class="lc-title">Active</div>
+        <div class="lc-file">Tasks/active.md</div>
+        <div class="lc-desc">Committed this week. Max 5 items. Blocked items tracked with reason.</div>
+      </div>
+      <div class="lc-stage">
+        <div class="lc-num" style="--sc:var(--workflows-color)">3</div>
+        <div class="lc-title">Execute</div>
+        <div class="lc-file">Projects/ or Workflows/</div>
+        <div class="lc-desc">Real work happens in Project folders or Workflow mini-workspaces.</div>
+      </div>
+      <div class="lc-stage">
+        <div class="lc-num" style="--sc:var(--knowledge-color)">4</div>
+        <div class="lc-title">Archive</div>
+        <div class="lc-file">Tasks/archive/</div>
+        <div class="lc-desc">Completed with date stamp. Learnings promoted to Knowledge/.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- S3: CLAUDE INTERACTION FLOWS -->
+  <section>
+    <div class="section-hdr">
+      <span class="section-num">03</span>
+      <span class="section-title">How Claude Interacts with PradOS</span>
+      <span class="section-tag">read → reason → write</span>
+    </div>
+
+    <div class="flows-grid">
+
+      <div class="flow-card anim">
+        <div class="flow-trigger">⚡ Session Start</div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--claude-blue)"></div>
+          <div class="flow-text">Reads <strong>CLAUDE.md</strong> for orientation — who is Pradeep, what system is this</div>
+          <div class="flow-badge">CLAUDE.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--claude-purple)"></div>
+          <div class="flow-text">Checks <strong>GOALS.md</strong> for current priorities and ownership areas</div>
+          <div class="flow-badge">GOALS.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--tasks-color)"></div>
+          <div class="flow-text">Scans <strong>Tasks/active.md</strong> to understand what's in flight</div>
+          <div class="flow-badge">active.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--knowledge-color)"></div>
+          <div class="flow-text">Reads <strong>about-me.md</strong> for durable preferences and context</div>
+          <div class="flow-badge">about-me.md</div>
+        </div>
+      </div>
+
+      <div class="flow-card anim">
+        <div class="flow-trigger">🚀 /new-project</div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--projects-color)"></div>
+          <div class="flow-text">Creates folder at <strong>Projects/[name]/</strong> with standard structure</div>
+          <div class="flow-badge">Projects/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--templates-color)"></div>
+          <div class="flow-text">Copies <strong>Templates/project-brief.md</strong> → fills in name and date</div>
+          <div class="flow-badge">Templates/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--tasks-color)"></div>
+          <div class="flow-text">Asks if task should be added to <strong>Tasks/active.md</strong></div>
+          <div class="flow-badge">active.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--projects-color)"></div>
+          <div class="flow-text">Updates <strong>Projects/README.md</strong> table with new entry</div>
+          <div class="flow-badge">README.md</div>
+        </div>
+      </div>
+
+      <div class="flow-card anim">
+        <div class="flow-trigger">📊 /standup</div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--tasks-color)"></div>
+          <div class="flow-text">Reads <strong>Tasks/active.md</strong> for current in-progress items</div>
+          <div class="flow-badge">active.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--meetings-color)"></div>
+          <div class="flow-text">Scans <strong>Meetings/standups/</strong> for yesterday's note</div>
+          <div class="flow-badge">standups/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--tasks-color)"></div>
+          <div class="flow-text">Checks <strong>Tasks/archive/</strong> for completions since yesterday</div>
+          <div class="flow-badge">archive/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--meetings-color)"></div>
+          <div class="flow-text">Generates standup → offers to save to <strong>standups/today.md</strong></div>
+          <div class="flow-badge">output</div>
+        </div>
+      </div>
+
+      <div class="flow-card anim">
+        <div class="flow-trigger">🧠 /meeting-prep</div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--knowledge-color)"></div>
+          <div class="flow-text">Reads <strong>Knowledge/People/[name].md</strong> for person context</div>
+          <div class="flow-badge">People/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--meetings-color)"></div>
+          <div class="flow-text">Scans <strong>Meetings/1on1s/</strong> for last meeting with this person</div>
+          <div class="flow-badge">1on1s/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--projects-color)"></div>
+          <div class="flow-text">Checks <strong>Projects/</strong> for shared work or relevant context</div>
+          <div class="flow-badge">Projects/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot" style="--dc:var(--claude-blue)"></div>
+          <div class="flow-text">Produces prep sheet with agenda, open items, and key context</div>
+          <div class="flow-badge">output</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- S4: SKILLS -->
+  <section>
+    <div class="section-hdr">
+      <span class="section-num">04</span>
+      <span class="section-title">Available Skills</span>
+      <span class="section-tag">run inside PradOS</span>
+    </div>
+
+    <div class="skills-grid">
+      <div class="skill-card anim">
+        <div>
+          <div class="skill-cmd">/standup</div>
+          <div class="skill-desc">Generate today's standup from active tasks, archive, and yesterday's meeting note. Saves automatically.</div>
+        </div>
+      </div>
+      <div class="skill-card anim">
+        <div>
+          <div class="skill-cmd">/weekly-update</div>
+          <div class="skill-desc">Draft a stakeholder update from the week's accomplishments, active work, and priorities. Under 200 words.</div>
+        </div>
+      </div>
+      <div class="skill-card anim">
+        <div>
+          <div class="skill-cmd">/new-project [name]</div>
+          <div class="skill-desc">Scaffold a full project folder: brief.md, research/, assets/. Updates Projects/README.md table.</div>
+        </div>
+      </div>
+      <div class="skill-card anim">
+        <div>
+          <div class="skill-cmd">/meeting-prep [topic]</div>
+          <div class="skill-desc">Pull context from Knowledge/People/, prior 1on1 notes, and Projects/. Produce a structured prep sheet.</div>
+        </div>
+      </div>
+      <div class="skill-card anim">
+        <div>
+          <div class="skill-cmd">/reflect</div>
+          <div class="skill-desc">Weekly or monthly reflection. Pre-fills completed tasks and goal status. Offers to update GOALS.md.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- S5: INFORMATION FLOW -->
+  <section>
+    <div class="section-hdr">
+      <span class="section-num">05</span>
+      <span class="section-title">Information Flow</span>
+      <span class="section-tag">how context moves through PradOS</span>
+    </div>
+
+    <div class="infoflow-wrap">
+      <div class="ifd">
+
+        <!-- Row 1 -->
+        <div class="ifd-node" style="--nc:var(--knowledge-color)">
+          <div class="ifd-icon">🧠</div>
+          <div class="ifd-name">Knowledge/</div>
+          <div class="ifd-desc">Durable context &amp; about-me</div>
+        </div>
+        <div class="ifd-arr"><div>→</div><div class="ifd-arr-lbl">reads</div></div>
+        <div class="ifd-node" style="--nc:var(--claude-blue);border-color:rgba(124,140,248,0.5);background:rgba(124,140,248,0.06)">
+          <div class="ifd-icon">🤖</div>
+          <div class="ifd-name">Claude</div>
+          <div class="ifd-desc">Oriented via CLAUDE.md</div>
+        </div>
+        <div class="ifd-arr"><div>→</div><div class="ifd-arr-lbl">writes to</div></div>
+        <div class="ifd-node" style="--nc:var(--projects-color)">
+          <div class="ifd-icon">🚀</div>
+          <div class="ifd-name">Projects/</div>
+          <div class="ifd-desc">Briefs, research, assets</div>
+        </div>
+
+        <!-- Gap row -->
+        <div class="ifd-vline"></div>
+        <div></div>
+        <div class="ifd-vline"></div>
+        <div></div>
+        <div class="ifd-vline"></div>
+
+        <!-- Row 2 -->
+        <div class="ifd-node" style="--nc:var(--tasks-color)">
+          <div class="ifd-icon">📋</div>
+          <div class="ifd-name">Tasks/</div>
+          <div class="ifd-desc">Backlog → Active → Archive</div>
+        </div>
+        <div class="ifd-arr"><div>↔</div><div class="ifd-arr-lbl">updates</div></div>
+        <div class="ifd-node" style="--nc:var(--workflows-color)">
+          <div class="ifd-icon">🔁</div>
+          <div class="ifd-name">Workflows/</div>
+          <div class="ifd-desc">Repeatable processes</div>
+        </div>
+        <div class="ifd-arr"><div>→</div><div class="ifd-arr-lbl">outputs</div></div>
+        <div class="ifd-node" style="--nc:var(--meetings-color)">
+          <div class="ifd-icon">💬</div>
+          <div class="ifd-name">Meetings/</div>
+          <div class="ifd-desc">Notes, decisions, actions</div>
+        </div>
+
+        <!-- Gap row -->
+        <div class="ifd-vline"></div>
+        <div></div>
+        <div class="ifd-vline"></div>
+        <div></div>
+        <div class="ifd-vline"></div>
+
+        <!-- Row 3 -->
+        <div class="ifd-node" style="--nc:var(--temp-color)">
+          <div class="ifd-icon">🗂</div>
+          <div class="ifd-name">_temp/</div>
+          <div class="ifd-desc">Capture zone, promotes up</div>
+        </div>
+        <div class="ifd-arr"><div>→</div><div class="ifd-arr-lbl">scaffolds</div></div>
+        <div class="ifd-node" style="--nc:var(--templates-color)">
+          <div class="ifd-icon">📐</div>
+          <div class="ifd-name">Templates/</div>
+          <div class="ifd-desc">Structure for new docs</div>
+        </div>
+        <div class="ifd-arr"><div>→</div><div class="ifd-arr-lbl">runs</div></div>
+        <div class="ifd-node" style="--nc:var(--tools-color)">
+          <div class="ifd-icon">🛠</div>
+          <div class="ifd-name">Tools/</div>
+          <div class="ifd-desc">Scripts &amp; automation</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- S6: PRINCIPLES -->
+  <section>
+    <div class="section-hdr">
+      <span class="section-num">06</span>
+      <span class="section-title">Core Principles</span>
+      <span class="section-tag">the philosophy behind PradOS</span>
+    </div>
+
+    <div class="principles-grid">
+      <div class="p-card anim" style="--pc:var(--claude-blue)">
+        <div class="p-num">1</div>
+        <div class="p-title">Pointers over content</div>
+        <div class="p-desc">CLAUDE.md doesn't contain everything — it points to where things live. Files stay lean. Depth lives at the leaves.</div>
+      </div>
+      <div class="p-card anim" style="--pc:var(--tasks-color)">
+        <div class="p-num">2</div>
+        <div class="p-title">Capture before organizing</div>
+        <div class="p-desc">_temp/ exists because friction kills capture. Dump first. Entropy is fine in _temp. It is not acceptable anywhere else.</div>
+      </div>
+      <div class="p-card anim" style="--pc:var(--projects-color)">
+        <div class="p-num">3</div>
+        <div class="p-title">Every task has a lifecycle</div>
+        <div class="p-desc">Ideas are born in backlog. They grow in active. They graduate to archive. Nothing stays in limbo indefinitely.</div>
+      </div>
+      <div class="p-card anim" style="--pc:var(--workflows-color)">
+        <div class="p-num">4</div>
+        <div class="p-title">Workflows multiply leverage</div>
+        <div class="p-desc">A process written once can run a hundred times with Claude. The Workflows/ factory compounds your effort over time.</div>
+      </div>
+      <div class="p-card anim" style="--pc:var(--knowledge-color)">
+        <div class="p-num">5</div>
+        <div class="p-title">Intelligence compounds through writing</div>
+        <div class="p-desc">A meeting note today is Knowledge/ next year. Output captured is context preserved. The system works when you write things down.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p><strong>PradOS v1.0</strong> &nbsp;·&nbsp; Personal Operating System for Pradeep Nair &nbsp;·&nbsp; Built with Claude Code &nbsp;·&nbsp; February 2026</p>
+    <p style="margin-top:8px;font-size:11px">github.com/pradeepunair/PradOS</p>
+  </footer>
+
+</div>
+</body>
+</html>
