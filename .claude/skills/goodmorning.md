@@ -1,7 +1,9 @@
 ---
 name: goodmorning
-description: Run the morning DailyBrief pipeline — fetch news, summarize with Claude, fetch X posts, build digest, save markdown, send email
+description: Run the morning DailyBrief pipeline — fetch news, summarize with Claude, fetch X posts, build digest, save markdown, send email — then generate and save today's standup
 ---
+
+## Part 1 — DailyBrief Pipeline
 
 Run the DailyBrief pipeline. Use the Bash tool to execute:
 
@@ -20,3 +22,26 @@ After the command completes:
 - Read `Projects/DailyBrief/output/YYYY-MM-DD-digest.md` (use today's date) and display its full content inline
 - Report status summary: digest saved ✓/✗ | email delivered ✓/✗ | X posts ✓/✗
 - If email failed: show the error and note the digest is still saved to output/
+
+---
+
+## Part 2 — Daily Standup
+
+After the digest is displayed, immediately generate today's standup.
+
+Read `Tasks/active.md` and scan the most recent file in `Meetings/standups/` (if any exist).
+
+Generate the standup in this format:
+
+**Yesterday:**
+[What was worked on, based on task status and the most recent standup note]
+
+**Today:**
+[What is planned, based on active tasks]
+
+**Blockers:**
+[Any blocked tasks. If none, say "None."]
+
+Keep each section to 2-3 bullet points. Be specific.
+
+Then automatically save it to `Meetings/standups/YYYY-MM-DD.md` (use today's date) without asking — this is a pipeline step. Confirm the file was saved.
