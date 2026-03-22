@@ -24,6 +24,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "/Users/pradeepnair/Desktop/GEN AI/Weather-WebApp", "run", "mock:mcp"],
       "port": 8080
+    },
+    {
+      "name": "Website Chatbot",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["/Users/pradeepnair/Desktop/GEN AI/PradOS/Projects/WebsiteChatbot/run.py"],
+      "port": 8000
     }
   ]
 }

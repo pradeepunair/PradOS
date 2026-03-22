@@ -30,6 +30,7 @@ Current goals: GOALS.md
 - /new-project [name] — scaffold a new project folder
 - /meeting-prep [person or topic] — pull context for a meeting
 - /reflect — weekly or monthly reflection prompt
+- /goodmorning — run the morning DailyBrief pipeline (fetch news, summarize, send email)
 
 ## Behavioral Rules
 
