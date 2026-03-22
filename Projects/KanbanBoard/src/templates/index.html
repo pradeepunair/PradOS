@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PradOS — Projects</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>PradOS &mdash; Projects</h1>
+  <span id="last-updated"></span>
+</header>
+
+<div class="board" id="board">
+  <div class="lane" data-lane="backlog">
+    <div class="lane-header">
+      <span class="lane-title">Backlog</span>
+      <span class="lane-count" id="count-backlog">0</span>
+    </div>
+    <div class="lane-cards" id="lane-backlog"></div>
+  </div>
+
+  <div class="lane" data-lane="in_progress">
+    <div class="lane-header">
+      <span class="lane-title">In Progress</span>
+      <span class="lane-count" id="count-in_progress">0</span>
+    </div>
+    <div class="lane-cards" id="lane-in_progress"></div>
+  </div>
+
+  <div class="lane" data-lane="completed">
+    <div class="lane-header">
+      <span class="lane-title">Completed</span>
+      <span class="lane-count" id="count-completed">0</span>
+    </div>
+    <div class="lane-cards" id="lane-completed"></div>
+  </div>
+</div>
+
+<script>
+// ── Lane → Status mapping (what status to write when dropped in a lane) ──
+const LANE_STATUS = {
+  backlog:     "Discovery",
+  in_progress: "Active",
+  completed:   "Complete",
+};
+
+const BADGE_CLASS = {
+  Discovery: "badge-discovery",
+  Active:    "badge-active",
+  Complete:  "badge-complete",
+  Paused:    "badge-paused",
+};
+
+// ── Render a single card ──
+function renderCard(project) {
+  const { name, title, description, status, started, tasks, task_counts } = project;
+  const hasTasks = tasks && tasks.length > 0;
+  const donePct  = task_counts.total > 0
+    ? Math.round((task_counts.done / task_counts.total) * 100)
+    : 0;
+
+  const taskItemsHtml = hasTasks
+    ? tasks.map(t => `
+        <label class="task-item ${t.done ? 'done' : ''}" data-project="${name}" data-idx="${t.index}">
+          <input type="checkbox" ${t.done ? 'checked' : ''} onclick="handleTaskToggle(event, '${name}', ${t.index})" />
+          ${escHtml(t.text)}
+        </label>`).join("")
+    : '<span style="font-size:0.72rem;color:#475569">No tasks in brief.md</span>';
+
+  const progressHtml = hasTasks ? `
+    <div class="task-progress">
+      <div class="task-progress-bar-bg">
+        <div class="task-progress-bar" style="width:${donePct}%"></div>
+      </div>
+      <span class="task-progress-label">${task_counts.done}/${task_counts.total} tasks</span>
+    </div>` : "";
+
+  return `
+    <div class="card" data-name="${name}" draggable="true">
+      <div class="card-header">
+        <span class="card-title">${escHtml(title)}</span>
+        <button class="card-toggle" onclick="toggleTasks(this)" title="Show tasks">▾</button>
+      </div>
+      ${description ? `<div class="card-description">${escHtml(description)}</div>` : ""}
+      <div class="card-meta">
+        <span class="badge ${BADGE_CLASS[status] || 'badge-discovery'}">${status}</span>
+        ${started ? `<span class="card-started">Started ${started}</span>` : ""}
+      </div>
+      ${progressHtml}
+      <div class="task-list">
+        ${taskItemsHtml}
+      </div>
+    </div>`;
+}
+
+// ── Toggle task list open/close ──
+function toggleTasks(btn) {
+  const taskList = btn.closest(".card").querySelector(".task-list");
+  taskList.classList.toggle("open");
+  btn.textContent = taskList.classList.contains("open") ? "▴" : "▾";
+}
+
+// ── Toggle a task checkbox ──
+async function handleTaskToggle(event, projectName, taskIdx) {
+  event.stopPropagation();
+  try {
+    const res = await fetch(`/api/projects/${projectName}/tasks/${taskIdx}`, { method: "PATCH" });
+    if (!res.ok) console.error("Task toggle failed", await res.text());
+  } catch (e) {
+    console.error("Task toggle error", e);
+  }
+}
+
+// ── Load and render board ──
+async function loadBoard() {
+  const res = await fetch("/api/projects");
+  const lanes = await res.json();
+
+  ["backlog", "in_progress", "completed"].forEach(lane => {
+    const container = document.getElementById(`lane-${lane}`);
+    const projects  = lanes[lane] || [];
+    document.getElementById(`count-${lane}`).textContent = projects.length;
+    container.innerHTML = projects.length
+      ? projects.map(renderCard).join("")
+      : '<div class="lane-empty">No projects</div>';
+  });
+
+  document.getElementById("last-updated").textContent =
+    "Updated " + new Date().toLocaleTimeString();
+
+  initSortable();
+}
+
+// ── SortableJS drag-and-drop ──
+function initSortable() {
+  ["backlog", "in_progress", "completed"].forEach(lane => {
+    const el = document.getElementById(`lane-${lane}`);
+    Sortable.create(el, {
+      group:     "projects",
+      animation: 150,
+      ghostClass: "sortable-ghost",
+      chosenClass: "sortable-chosen",
+      onAdd: async (evt) => {
+        const cardEl    = evt.item;
+        const name      = cardEl.dataset.name;
+        const targetLane = evt.to.closest(".lane").dataset.lane;
+        const newStatus  = LANE_STATUS[targetLane];
+
+        // Update badge immediately
+        const badge = cardEl.querySelector(".badge");
+        if (badge) {
+          badge.className = `badge ${BADGE_CLASS[newStatus]}`;
+          badge.textContent = newStatus;
+        }
+
+        // Persist to server
+        try {
+          const res = await fetch(`/api/projects/${name}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          });
+          if (!res.ok) {
+            console.error("Status update failed", await res.text());
+          }
+          // Update count badges
+          updateCounts();
+        } catch (e) {
+          console.error("Status update error", e);
+        }
+      },
+    });
+  });
+}
+
+function updateCounts() {
+  ["backlog", "in_progress", "completed"].forEach(lane => {
+    const count = document.getElementById(`lane-${lane}`)
+      .querySelectorAll(".card").length;
+    document.getElementById(`count-${lane}`).textContent = count;
+  });
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ── Init ──
+loadBoard();
+</script>
+</body>
+</html>

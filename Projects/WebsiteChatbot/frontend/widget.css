@@ -1,0 +1,182 @@
+/* ────────────────────────────────────────────────────────────────
+   Pradeep Nair — Website Chatbot Widget
+   Injected into pradeepunair.me pages via widget.js
+   All classes prefixed with .pn-chat- to avoid collisions
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  --pn-accent:   #6366f1;
+  --pn-accent-h: #818cf8;
+  --pn-bg:       #0f172a;
+  --pn-surface:  #1e293b;
+  --pn-border:   #334155;
+  --pn-text:     #f1f5f9;
+  --pn-muted:    #94a3b8;
+  --pn-user:     #3730a3;
+  --pn-source:   #0ea5e9;
+  --pn-radius:   14px;
+  --pn-z:        9998;
+}
+
+/* ── Trigger bubble ── */
+#pn-chat-trigger {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pn-accent), #7c3aed);
+  border: none; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(99,102,241,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: var(--pn-z);
+  transition: transform .2s, box-shadow .2s;
+}
+#pn-chat-trigger:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(99,102,241,.6);
+}
+#pn-chat-trigger svg { color: #fff; }
+
+/* Unread badge */
+#pn-chat-trigger .pn-badge {
+  position: absolute; top: -2px; right: -2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #ef4444; color: #fff;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ── Chat window ── */
+#pn-chat-window {
+  position: fixed;
+  bottom: 90px; right: 24px;
+  width: 380px; height: 540px;
+  border-radius: 20px;
+  background: var(--pn-bg);
+  border: 1px solid var(--pn-border);
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  z-index: var(--pn-z);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px; color: var(--pn-text);
+  transform: scale(.92) translateY(12px); opacity: 0;
+  pointer-events: none;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), opacity .18s ease;
+}
+#pn-chat-window.pn-open {
+  transform: scale(1) translateY(0); opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 480px) {
+  #pn-chat-window {
+    width: calc(100vw - 24px);
+    right: 12px; bottom: 80px;
+    height: calc(100dvh - 100px);
+    border-radius: 16px;
+  }
+}
+
+/* ── Window header ── */
+.pn-chat-header {
+  background: linear-gradient(135deg, #1e1b4b, #0f172a);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--pn-border);
+  flex-shrink: 0;
+}
+.pn-chat-header-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pn-accent), #a855f7);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: #fff;
+}
+.pn-chat-header-info { flex: 1; }
+.pn-chat-header-info strong { display: block; font-size: 14px; font-weight: 600; }
+.pn-chat-header-info span   { font-size: 11px; color: var(--pn-muted); }
+.pn-close-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--pn-muted); padding: 4px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s;
+}
+.pn-close-btn:hover { color: var(--pn-text); background: rgba(255,255,255,.08); }
+
+/* ── Messages ── */
+.pn-messages {
+  flex: 1; overflow-y: auto; padding: 14px 12px;
+  display: flex; flex-direction: column; gap: 12px;
+  scroll-behavior: smooth;
+}
+.pn-messages::-webkit-scrollbar { width: 3px; }
+.pn-messages::-webkit-scrollbar-thumb { background: var(--pn-border); border-radius: 3px; }
+
+.pn-msg { display: flex; gap: 8px; max-width: 90%; animation: pnFadeUp .18s ease; }
+@keyframes pnFadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.pn-msg.pn-user { align-self: flex-end; flex-direction: row-reverse; }
+.pn-msg.pn-bot  { align-self: flex-start; }
+
+.pn-msg-av {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+.pn-msg.pn-user .pn-msg-av { background: var(--pn-user); color: #c7d2fe; }
+.pn-msg.pn-bot  .pn-msg-av { background: linear-gradient(135deg,var(--pn-accent),#a855f7); color:#fff; }
+
+.pn-bubble {
+  padding: 9px 12px; border-radius: var(--pn-radius);
+  line-height: 1.55; font-size: 13.5px;
+}
+.pn-msg.pn-user .pn-bubble {
+  background: var(--pn-user); color: #e0e7ff;
+  border-bottom-right-radius: 4px;
+}
+.pn-msg.pn-bot .pn-bubble {
+  background: var(--pn-surface); color: var(--pn-text);
+  border: 1px solid var(--pn-border);
+  border-bottom-left-radius: 4px;
+}
+
+.pn-sources { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.pn-source-chip {
+  font-size: 10.5px; padding: 2px 8px; border-radius: 20px;
+  background: rgba(14,165,233,.1); border: 1px solid rgba(14,165,233,.28);
+  color: var(--pn-source); text-decoration: none; white-space: nowrap;
+  transition: background .12s;
+}
+.pn-source-chip:hover { background: rgba(14,165,233,.2); }
+
+/* typing indicator */
+.pn-typing { display: flex; align-items: center; gap: 3px; padding: 8px 10px; }
+.pn-typing span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--pn-muted);
+  animation: pnBounce .9s infinite;
+}
+.pn-typing span:nth-child(2){animation-delay:.15s}
+.pn-typing span:nth-child(3){animation-delay:.30s}
+@keyframes pnBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+/* welcome state */
+.pn-welcome {
+  text-align: center; padding: 16px 8px; color: var(--pn-muted);
+}
+.pn-welcome p { font-size: 12.5px; line-height: 1.5; margin-bottom: 12px; }
+.pn-suggestions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.pn-suggestion {
+  padding: 7px 12px; border-radius: 10px; font-size: 12.5px; cursor: pointer;
+  background: var(--pn-surface); border: 1px solid var(--pn-border); color: var(--pn-text);
+  text-align: left; transition: border-color .15s;
+}
+.pn-suggestion:hover { border-color: var(--pn-accent); }
+
+/* Input bar removed — chip-only UI, no free-text input */
+
+.pn-footer-note {
+  font-size: 10px; color: var(--pn-muted); text-align: center;
+  padding: 4px 0 6px;
+  background: var(--pn-surface);
+  flex-shrink: 0;
+}

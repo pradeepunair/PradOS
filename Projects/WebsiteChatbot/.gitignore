@@ -1,0 +1,19 @@
+# Secrets
+.env
+
+# Vector index (regenerated via reindex.py)
+data/embeddings.npy
+data/chunks.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Sentence-transformers model cache
+.cache/
+
+# macOS
+.DS_Store

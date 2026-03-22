@@ -8,6 +8,8 @@ __pycache__/
 # Sensitive auth files
 *.x_cookies.json
 .x_cookies.json
+*.db
+.twscrape_accounts.db
 
 # Generated output / temp
 _temp/
