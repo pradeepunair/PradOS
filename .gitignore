@@ -1,0 +1,22 @@
+.DS_Store
+.env
+**/.env
+*.pyc
+__pycache__/
+.venv/
+
+# Sensitive auth files
+*.x_cookies.json
+.x_cookies.json
+
+# Generated output / temp
+_temp/
+Projects/DailyBrief/output/
+Projects/ResumePrep/output/
+Projects/WebsiteChatbot/data/
+
+# Large binaries
+*.jpg
+*.jpeg
+*.png
+Pradeep_Product_Manager.docx
