@@ -187,3 +187,46 @@ header span { font-size: 0.8rem; color: #64748b; }
 
 /* ── Drag-over highlight ── */
 .lane.drag-over { background: #1e2235; }
+
+/* ── Header right (timestamp + refresh button) ── */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#refresh-stats-btn {
+  font-size: 0.72rem;
+  padding: 4px 12px;
+  background: #1e2a3a;
+  color: #60a5fa;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#refresh-stats-btn:hover:not(:disabled) { background: #1e3a5f; }
+#refresh-stats-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* ── Token / time stat row on cards ── */
+.card-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.stat-tokens,
+.stat-cost,
+.stat-time {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid #2d3148;
+  background: #1a1d27;
+  color: #64748b;
+  cursor: default;
+}
+.stat-tokens { color: #a78bfa; border-color: #4c1d95; background: #1e1535; }
+.stat-cost   { color: #34d399; border-color: #065f46; background: #052e20; }
+.stat-time   { color: #60a5fa; border-color: #1d4ed8; background: #0f2040; }

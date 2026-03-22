@@ -30,6 +30,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["/Users/pradeepnair/Desktop/GEN AI/PradOS/Projects/WebsiteChatbot/run.py"],
       "port": 8000
+    },
+    {
+      "name": "KanbanBoard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/Users/pradeepnair/Desktop/GEN AI/PradOS/Projects/KanbanBoard/src/app.py"],
+      "port": 8080
     }
   ]
 }

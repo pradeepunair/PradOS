@@ -11,7 +11,10 @@
 
 <header>
   <h1>PradOS &mdash; Projects</h1>
-  <span id="last-updated"></span>
+  <div class="header-right">
+    <span id="last-updated"></span>
+    <button id="refresh-stats-btn" onclick="refreshStats()" title="Re-run token parser">⚡ Refresh Stats</button>
+  </div>
 </header>
 
 <div class="board" id="board">
@@ -55,9 +58,27 @@ const BADGE_CLASS = {
   Paused:    "badge-paused",
 };
 
+// ── Format helpers ──
+function fmtTokens(n) {
+  if (!n) return null;
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + "K";
+  return String(n);
+}
+function fmtHours(h) {
+  if (!h) return null;
+  if (h < 1) return Math.round(h * 60) + "m";
+  return h.toFixed(1) + "h";
+}
+function fmtCost(c) {
+  if (!c) return null;
+  return c < 0.01 ? "<$0.01" : "$" + c.toFixed(2);
+}
+
 // ── Render a single card ──
 function renderCard(project) {
-  const { name, title, description, status, started, tasks, task_counts } = project;
+  const { name, title, description, status, started, tasks, task_counts,
+          tokens, cost_usd, hours, sessions } = project;
   const hasTasks = tasks && tasks.length > 0;
   const donePct  = task_counts.total > 0
     ? Math.round((task_counts.done / task_counts.total) * 100)
@@ -91,6 +112,12 @@ function renderCard(project) {
         ${started ? `<span class="card-started">Started ${started}</span>` : ""}
       </div>
       ${progressHtml}
+      ${(tokens || hours) ? `
+      <div class="card-stats">
+        ${fmtTokens(tokens) ? `<span class="stat-tokens" title="Total tokens used">⚡ ${fmtTokens(tokens)}</span>` : ""}
+        ${fmtCost(cost_usd) ? `<span class="stat-cost" title="Estimated cost">${fmtCost(cost_usd)}</span>` : ""}
+        ${fmtHours(hours) ? `<span class="stat-time" title="${sessions} session(s)">⏱ ${fmtHours(hours)}</span>` : ""}
+      </div>` : ""}
       <div class="task-list">
         ${taskItemsHtml}
       </div>
@@ -191,6 +218,40 @@ function escHtml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+// ── Refresh token stats ──
+async function refreshStats() {
+  const btn = document.getElementById("refresh-stats-btn");
+  btn.disabled = true;
+  btn.textContent = "⚡ Refreshing…";
+  try {
+    const res = await fetch("/api/refresh-stats", { method: "POST" });
+    if (!res.ok) {
+      console.error("Refresh failed", await res.text());
+      btn.textContent = "⚡ Error";
+      return;
+    }
+    const data = await res.json();
+    // Re-render all lanes with fresh data
+    ["backlog", "in_progress", "completed"].forEach(lane => {
+      const container = document.getElementById(`lane-${lane}`);
+      const projects  = data.projects[lane] || [];
+      document.getElementById(`count-${lane}`).textContent = projects.length;
+      container.innerHTML = projects.length
+        ? projects.map(renderCard).join("")
+        : '<div class="lane-empty">No projects</div>';
+    });
+    initSortable();
+    document.getElementById("last-updated").textContent =
+      "Updated " + new Date().toLocaleTimeString();
+    btn.textContent = "⚡ Refresh Stats";
+  } catch (e) {
+    console.error("Refresh error", e);
+    btn.textContent = "⚡ Retry";
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── Init ──
